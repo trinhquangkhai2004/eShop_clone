@@ -1,0 +1,561 @@
+{
+    "annotations":  {
+                        "list":  [
+
+                                 ]
+                    },
+    "editable":  true,
+    "fiscalYearStartMonth":  0,
+    "graphTooltip":  0,
+    "id":  null,
+    "links":  [
+                  {
+                      "targetBlank":  true,
+                      "title":  "Open Jaeger",
+                      "type":  "link",
+                      "url":  "http://localhost:16686/search?service=payment-processor"
+                  }
+              ],
+    "panels":  [
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "unit":  "short"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  6,
+                                       "w":  6,
+                                       "x":  0,
+                                       "y":  0
+                                   },
+                       "id":  1,
+                       "options":  {
+                                       "colorMode":  "value",
+                                       "graphMode":  "area",
+                                       "justifyMode":  "auto",
+                                       "orientation":  "auto",
+                                       "reduceOptions":  {
+                                                             "calcs":  [
+                                                                           "lastNotNull"
+                                                                       ],
+                                                             "fields":  "",
+                                                             "values":  false
+                                                         },
+                                       "textMode":  "auto"
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "round(sum(increase(payment_transactions_total{status=\"Succeeded\"}[30m]))) OR on() vector(0)",
+                                           "legendFormat":  "Succeeded",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "Payment Success (30m)",
+                       "type":  "stat"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "unit":  "short"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  6,
+                                       "w":  6,
+                                       "x":  6,
+                                       "y":  0
+                                   },
+                       "id":  2,
+                       "options":  {
+                                       "colorMode":  "value",
+                                       "graphMode":  "area",
+                                       "justifyMode":  "auto",
+                                       "orientation":  "auto",
+                                       "reduceOptions":  {
+                                                             "calcs":  [
+                                                                           "lastNotNull"
+                                                                       ],
+                                                             "fields":  "",
+                                                             "values":  false
+                                                         },
+                                       "textMode":  "auto"
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "round(sum(increase(payment_transactions_total{status=\"Failed\"}[30m]))) OR on() vector(0)",
+                                           "legendFormat":  "Failed",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "Payment Failures (30m)",
+                       "type":  "stat"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "unit":  "short"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  6,
+                                       "w":  6,
+                                       "x":  12,
+                                       "y":  0
+                                   },
+                       "id":  3,
+                       "options":  {
+                                       "colorMode":  "value",
+                                       "graphMode":  "area",
+                                       "justifyMode":  "auto",
+                                       "orientation":  "auto",
+                                       "reduceOptions":  {
+                                                             "calcs":  [
+                                                                           "lastNotNull"
+                                                                       ],
+                                                             "fields":  "",
+                                                             "values":  false
+                                                         },
+                                       "textMode":  "auto"
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "round(sum(increase(payment_idempotency_hits_total[30m]))) OR on() vector(0)",
+                                           "legendFormat":  "Idempotency Hits",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "Idempotency Hits (30m)",
+                       "type":  "stat"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "unit":  "short"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  6,
+                                       "w":  6,
+                                       "x":  18,
+                                       "y":  0
+                                   },
+                       "id":  4,
+                       "options":  {
+                                       "colorMode":  "value",
+                                       "graphMode":  "area",
+                                       "justifyMode":  "auto",
+                                       "orientation":  "auto",
+                                       "reduceOptions":  {
+                                                             "calcs":  [
+                                                                           "lastNotNull"
+                                                                       ],
+                                                             "fields":  "",
+                                                             "values":  false
+                                                         },
+                                       "textMode":  "auto"
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "round(sum(increase(payment_result_events_published_total[30m]))) OR on() vector(0)",
+                                           "legendFormat":  "Published",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "Payment Result Events (30m)",
+                       "type":  "stat"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "color":  {
+                                                                          "mode":  "palette-classic"
+                                                                      },
+                                                            "custom":  {
+                                                                           "drawStyle":  "line",
+                                                                           "fillOpacity":  10,
+                                                                           "lineWidth":  2,
+                                                                           "showPoints":  "never"
+                                                                       },
+                                                            "unit":  "short"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  8,
+                                       "w":  12,
+                                       "x":  0,
+                                       "y":  6
+                                   },
+                       "id":  5,
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "table",
+                                                      "placement":  "bottom",
+                                                      "showLegend":  true
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "multi",
+                                                       "sort":  "none"
+                                                   }
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "sum by (status) (increase(payment_transactions_total[5m]))",
+                                           "legendFormat":  "{{status}}",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "Payment Success / Fail by Status",
+                       "type":  "timeseries"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "unit":  "ms"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  8,
+                                       "w":  12,
+                                       "x":  12,
+                                       "y":  6
+                                   },
+                       "id":  6,
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "table",
+                                                      "placement":  "bottom",
+                                                      "showLegend":  true
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "multi",
+                                                       "sort":  "none"
+                                                   }
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "histogram_quantile(0.95, sum by (le) (rate(payment_processing_duration_ms_milliseconds_bucket[5m]))) or histogram_quantile(0.95, sum by (le) (rate(payment_processing_duration_ms_bucket[5m])))",
+                                           "legendFormat":  "p95",
+                                           "refId":  "A"
+                                       },
+                                       {
+                                           "expr":  "histogram_quantile(0.50, sum by (le) (rate(payment_processing_duration_ms_milliseconds_bucket[5m]))) or histogram_quantile(0.50, sum by (le) (rate(payment_processing_duration_ms_bucket[5m])))",
+                                           "legendFormat":  "p50",
+                                           "refId":  "B"
+                                       }
+                                   ],
+                       "title":  "Payment Latency",
+                       "type":  "timeseries"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "color":  {
+                                                                          "mode":  "palette-classic"
+                                                                      },
+                                                            "custom":  {
+                                                                           "drawStyle":  "line",
+                                                                           "fillOpacity":  10,
+                                                                           "lineWidth":  2,
+                                                                           "showPoints":  "never"
+                                                                       },
+                                                            "unit":  "ops"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  8,
+                                       "w":  12,
+                                       "x":  0,
+                                       "y":  14
+                                   },
+                       "id":  10,
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "table",
+                                                      "placement":  "bottom",
+                                                      "showLegend":  true
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "multi",
+                                                       "sort":  "none"
+                                                   }
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "sum by (type) (rate(payment_chaos_injections_total[1m]))",
+                                           "legendFormat":  "{{type}}",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "Chaos Injections Rate",
+                       "type":  "timeseries"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "color":  {
+                                                                          "mode":  "palette-classic"
+                                                                      },
+                                                            "custom":  {
+                                                                           "drawStyle":  "line",
+                                                                           "fillOpacity":  10,
+                                                                           "lineWidth":  2,
+                                                                           "showPoints":  "never"
+                                                                       },
+                                                            "unit":  "ops"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  8,
+                                       "w":  12,
+                                       "x":  12,
+                                       "y":  14
+                                   },
+                       "id":  11,
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "table",
+                                                      "placement":  "bottom",
+                                                      "showLegend":  true
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "multi",
+                                                       "sort":  "none"
+                                                   }
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "sum(rate(payment_failures_total[1m]))",
+                                           "legendFormat":  "real_failures",
+                                           "refId":  "A"
+                                       },
+                                       {
+                                           "expr":  "sum(rate(payment_chaos_injections_total[1m]))",
+                                           "legendFormat":  "chaos_injections",
+                                           "refId":  "B"
+                                       }
+                                   ],
+                       "title":  "Chaos vs Real Failures",
+                       "type":  "timeseries"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "postgres",
+                                          "uid":  "paymentdb"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  8,
+                                       "w":  24,
+                                       "x":  0,
+                                       "y":  22
+                                   },
+                       "id":  12,
+                       "options":  {
+                                       "cellHeight":  "sm",
+                                       "footer":  {
+                                                      "show":  false
+                                                  },
+                                       "showHeader":  true
+                                   },
+                       "targets":  [
+                                       {
+                                           "datasource":  {
+                                                              "type":  "postgres",
+                                                              "uid":  "paymentdb"
+                                                          },
+                                           "format":  "table",
+                                           "rawQuery":  true,
+                                           "rawSql":  "select\n  \"OrderId\" as \"Order ID\",\n  \"Status\" as \"Status\",\n  round(extract(epoch from (now() at time zone 'utc' - \"UpdatedAt\"))) as \"Processing Age Seconds\",\n  \"IdempotencyKey\" as \"Idempotency Key\",\n  \"CreatedAt\" as \"Created At\",\n  \"UpdatedAt\" as \"Updated At\"\nfrom payment.\"PaymentTransactions\"\nwhere \"Status\" = 'Processing'\n  and \"UpdatedAt\" < (now() at time zone 'utc' - interval '60 seconds')\norder by \"UpdatedAt\" asc\nlimit 20;",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "Processing Stuck Detection",
+                       "type":  "table"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "postgres",
+                                          "uid":  "paymentdb"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  10,
+                                       "w":  24,
+                                       "x":  0,
+                                       "y":  30
+                                   },
+                       "id":  7,
+                       "options":  {
+                                       "cellHeight":  "sm",
+                                       "footer":  {
+                                                      "show":  false
+                                                  },
+                                       "showHeader":  true
+                                   },
+                       "targets":  [
+                                       {
+                                           "datasource":  {
+                                                              "type":  "postgres",
+                                                              "uid":  "paymentdb"
+                                                          },
+                                           "format":  "table",
+                                           "rawQuery":  true,
+                                           "rawSql":  "select\n  \"OrderId\" as \"Order ID\",\n  round(\"Amount\", 2) as \"Amount\",\n  \"Currency\" as \"Currency\",\n  \"Status\" as \"Status\",\n  \"PaymentMethod\" as \"Method\",\n  \"IdempotencyKey\" as \"Idempotency Key\",\n  coalesce(\"GatewayTransactionId\", \u0027\u0027) as \"Gateway Transaction\",\n  \"CreatedAt\" as \"Created At\",\n  \"UpdatedAt\" as \"Updated At\"\nfrom payment.\"PaymentTransactions\"\norder by \"CreatedAt\" desc\nlimit 20;",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "Recent Transactions",
+                       "type":  "table"
+                   },
+                    {
+                        "gridPos":  {
+                                        "h":  9,
+                                        "w":  24,
+                                        "x":  0,
+                                        "y":  40
+                                    },
+                        "id":  9,
+                        "options":  {
+                                        "mode":  "html",
+                                        "content":  "<div style=\"font-family:Inter,Arial,sans-serif;color:#f3f6f9;padding:16px;display:flex;flex-direction:column;align-items:center;\"><div style=\"align-self:flex-start;margin-bottom:24px;color:#9aa8b8;font-size:14px;\">Selected order: <strong style=\"color:#fff\">${order_id}</strong></div><div style=\"display:flex;flex-direction:column;align-items:center;gap:12px;\"><div style=\"width:180px;padding:12px;background:#1f2937;border:2px solid #6366f1;border-radius:24px;text-align:center;\"><div style=\"font-weight:700;color:#fff;\">StockConfirmed</div><div style=\"font-size:11px;color:#9aa8b8;\">EventBus</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:220px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;\">Create/Get Txn</div><div style=\"font-size:11px;color:#9aa8b8;\"><span style=\"color:#5d7085;\">payment.create_or_get_transaction</span></div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"display:flex;align-items:center;gap:16px;transform:translateX(96px);\"><div style=\"width:180px;padding:12px;background:#2b2311;border:1px solid #c58a21;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#d8b66f;\">Idempotency Hit?</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&rarr;</div><div style=\"width:140px;padding:12px;background:#2b1719;border:1px dashed #b64a55;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#f0a1aa;\">Stop (Hit)</div><div style=\"font-size:11px;color:#9aa8b8;\">No duplicate event</div></div></div><div style=\"display:flex;align-items:center;gap:8px;\"><div style=\"color:#8fa1b5;font-size:12px;\">[Miss]</div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div></div><div style=\"width:180px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;\">Mark Processing</div><div style=\"font-size:11px;color:#9aa8b8;\">DB Status: Processing</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:180px;padding:12px;background:#2d1a3f;border:1px solid #7b4f9c;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#e1c3f5;\">Gateway Charge</div><div style=\"font-size:11px;color:#9aa8b8;\"><span style=\"color:#5d7085;\">payment.gateway.charge</span></div></div><div style=\"display:flex;align-items:flex-start;gap:32px;margin-top:8px;\"><div style=\"display:flex;flex-direction:column;align-items:center;gap:8px;\"><div style=\"color:#8ee6b8;font-size:12px;\">[Success]</div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:160px;padding:12px;background:#13271f;border:1px solid #2f8f5b;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#8ee6b8;\">Succeeded</div><div style=\"font-size:11px;color:#9aa8b8;\">DB Status: Succeeded</div></div></div><div style=\"display:flex;flex-direction:column;align-items:center;gap:8px;\"><div style=\"color:#f0a1aa;font-size:12px;\">[Failure]</div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:160px;padding:12px;background:#2b1719;border:1px solid #b64a55;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#f0a1aa;\">Failed</div><div style=\"font-size:11px;color:#9aa8b8;\">DB Status: Failed</div></div></div></div><div style=\"display:flex;justify-content:space-between;width:180px;margin-top:-4px;margin-bottom:-4px;\"><div style=\"color:#8fa1b5;font-size:24px;\">&searr;</div><div style=\"color:#8fa1b5;font-size:24px;\">&swarr;</div></div><div style=\"width:220px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;\">Publish Result Event</div><div style=\"font-size:11px;color:#9aa8b8;\">Succeeded / Failed Event<br><span style=\"color:#5d7085;\">payment.publish_result_event</span></div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:180px;padding:12px;background:#1f2937;border:2px solid #6366f1;border-radius:24px;text-align:center;\"><div style=\"font-weight:700;color:#fff;\">Ordering API</div><div style=\"font-size:11px;color:#9aa8b8;\">Consumes Event</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:180px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;\">Order Paid / Cancelled</div><div style=\"font-size:11px;color:#9aa8b8;\">Ordering DB Status Updated</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:180px;padding:12px;background:#13271f;border:2px solid #2f8f5b;border-radius:24px;text-align:center;\"><div style=\"font-weight:700;color:#8ee6b8;\">Order Status Updated</div></div></div></div>"
+                                    },
+                        "title":  "Payment Workflow Diagram",
+                        "type":  "text"
+                    },
+                    {
+                       "gridPos":  {
+                                       "h":  9,
+                                       "w":  24,
+                                       "x":  0,
+                                       "y":  49
+                                   },
+                       "id":  8,
+                       "options":  {
+                                       "content":  "### Trace Detail Per Order\n\n- Selected order: `${order_id}`\n- Open **Grafana Explore** with the **Jaeger** datasource, or use the direct Jaeger link below.\n- Search with:\n  - service: `payment-processor`\n  - operation: `payment.process`\n  - tag: `order.id=${order_id}`\n- Expected spans:\n  - `payment.process`\n  - `payment.create_or_get_transaction`\n  - `payment.gateway.charge`\n  - `payment.publish_result_event`\n\n[Open Jaeger search for this order](http://localhost:16686/search?service=payment-processor\u0026operation=payment.process\u0026tags=%7B%22order.id%22%3A%22${order_id}%22%7D)",
+                                       "mode":  "markdown"
+                                   },
+                       "title":  "Trace Detail Per Order",
+                       "type":  "text"
+                   }
+               ],
+    "refresh":  "5s",
+    "schemaVersion":  39,
+    "tags":  [
+                 "eshop",
+                 "payment",
+                 "overview"
+             ],
+    "templating":  {
+                       "list":  [
+                                    {
+                                        "current":  {
+                                                        "selected":  false,
+                                                        "text":  "",
+                                                        "value":  ""
+                                                    },
+                                        "datasource":  {
+                                                           "type":  "postgres",
+                                                           "uid":  "paymentdb"
+                                                       },
+                                        "definition":  "select distinct cast(\"OrderId\" as text) from payment.\"PaymentTransactions\" order by 1 desc",
+                                        "hide":  0,
+                                        "includeAll":  false,
+                                        "label":  "Order ID",
+                                        "multi":  false,
+                                        "name":  "order_id",
+                                        "options":  [
+
+                                                    ],
+                                        "query":  "select distinct cast(\"OrderId\" as text) from payment.\"PaymentTransactions\" order by 1 desc",
+                                        "refresh":  2,
+                                        "regex":  "",
+                                        "skipUrlSync":  false,
+                                        "sort":  3,
+                                        "type":  "query"
+                                    }
+                                ]
+                   },
+    "time":  {
+                 "from":  "now-30m",
+                 "to":  "now"
+             },
+    "timepicker":  {
+
+                   },
+    "timezone":  "",
+    "title":  "eShop Payment Overview",
+    "uid":  "eshop-payment-overview",
+    "version":  3,
+    "weekStart":  ""
+}

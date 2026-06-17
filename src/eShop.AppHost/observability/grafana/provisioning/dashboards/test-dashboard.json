@@ -1,0 +1,10 @@
+{
+  "id": null,
+  "uid": "test-dashboard-123",
+  "title": "Test Dashboard",
+  "tags": [ "test" ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 0,
+  "panels": []
+}

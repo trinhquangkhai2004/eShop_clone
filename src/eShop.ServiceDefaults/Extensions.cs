@@ -61,7 +61,8 @@ public static partial class Extensions
                 metrics.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
-                    .AddMeter("Experimental.Microsoft.Extensions.AI");
+                    .AddMeter("Experimental.Microsoft.Extensions.AI")
+                    .AddPrometheusExporter();
             })
             .WithTracing(tracing =>
             {
@@ -74,7 +75,7 @@ public static partial class Extensions
                 tracing.AddAspNetCoreInstrumentation()
                     .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddSource("Experimental.Microsoft.Extensions.AI");                    
+                    .AddSource("Experimental.Microsoft.Extensions.AI");
             });
 
         builder.AddOpenTelemetryExporters();
@@ -84,16 +85,27 @@ public static partial class Extensions
 
     private static IHostApplicationBuilder AddOpenTelemetryExporters(this IHostApplicationBuilder builder)
     {
-        var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+        var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+        var useOtlpExporter = !string.IsNullOrWhiteSpace(otlpEndpoint);
 
         if (useOtlpExporter)
         {
             builder.Services.Configure<OpenTelemetryLoggerOptions>(logging => logging.AddOtlpExporter());
             builder.Services.ConfigureOpenTelemetryMeterProvider(metrics => metrics.AddOtlpExporter());
-            
-            // Ép buộc gửi dữ liệu Trace về Jaeger ở port 4317 để hiển thị trực quan
-            builder.Services.ConfigureOpenTelemetryTracerProvider(tracing => 
-                tracing.AddOtlpExporter(opt => opt.Endpoint = new Uri("http://localhost:4317")));
+            builder.Services.ConfigureOpenTelemetryTracerProvider(tracing => tracing.AddOtlpExporter());
+        }
+
+        var jaegerEndpoint = builder.Configuration["ESHOP_OTEL_JAEGER_ENDPOINT"];
+        if (!string.IsNullOrWhiteSpace(jaegerEndpoint) &&
+            !string.Equals(jaegerEndpoint, otlpEndpoint, StringComparison.OrdinalIgnoreCase))
+        {
+            if (!Uri.TryCreate(jaegerEndpoint, UriKind.Absolute, out var jaegerOtlpEndpoint))
+            {
+                throw new InvalidOperationException("ESHOP_OTEL_JAEGER_ENDPOINT must be an absolute URI.");
+            }
+
+            builder.Services.ConfigureOpenTelemetryTracerProvider(tracing =>
+                tracing.AddOtlpExporter(options => options.Endpoint = jaegerOtlpEndpoint));
         }
 
         return builder;
@@ -110,8 +122,7 @@ public static partial class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
-        // Uncomment the following line to enable the Prometheus endpoint (requires the OpenTelemetry.Exporter.Prometheus.AspNetCore package)
-        // app.MapPrometheusScrapingEndpoint();
+        app.MapPrometheusScrapingEndpoint();
 
         // Adding health checks endpoints to applications in non-development environments has security implications.
         // See https://aka.ms/dotnet/aspire/healthchecks for details before enabling these endpoints in non-development environments.

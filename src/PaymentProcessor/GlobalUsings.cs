@@ -1,7 +1,15 @@
 ﻿global using eShop.EventBus.Abstractions;
 global using eShop.EventBus.Events;
 global using eShop.PaymentProcessor;
+global using eShop.PaymentProcessor.Chaos;
 global using eShop.PaymentProcessor.IntegrationEvents.EventHandling;
 global using eShop.PaymentProcessor.IntegrationEvents.Events;
+global using eShop.PaymentProcessor.Infrastructure;
+global using eShop.PaymentProcessor.Repair;
+global using eShop.PaymentProcessor.Services;
+global using eShop.PaymentProcessor.Telemetry;
+global using eShop.PaymentProcessor.Workers;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.EntityFrameworkCore.Metadata.Builders;
 global using Microsoft.Extensions.Options;
 global using eShop.ServiceDefaults;
