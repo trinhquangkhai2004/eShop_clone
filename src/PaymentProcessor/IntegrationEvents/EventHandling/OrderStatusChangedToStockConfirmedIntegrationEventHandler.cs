@@ -142,7 +142,7 @@ public class OrderStatusChangedToStockConfirmedIntegrationEventHandler(
                 else
                 {
                     var failureReason = gatewayResult.FailureReason ?? gatewayResult.Status.ToString();
-                    await paymentTransactionService.MarkFailedAsync(transaction);
+                    await paymentTransactionService.MarkFailedAsync(transaction, failureReason);
                     paymentStatus = transaction.Status;
 
                     gatewayActivity?.SetTag("payment.status", transaction.Status.ToString());
@@ -221,7 +221,9 @@ public class OrderStatusChangedToStockConfirmedIntegrationEventHandler(
                     break;
 
                 case BankGatewayPaymentStatus.Failed:
-                    await paymentTransactionService.MarkFailedAsync(transaction);
+                    await paymentTransactionService.MarkFailedAsync(
+                        transaction,
+                        gatewayResult.FailureReason ?? gatewayResult.Status.ToString());
                     await resultEventPublisher.PublishAsync(transaction);
                     break;
             }

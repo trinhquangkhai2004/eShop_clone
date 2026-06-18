@@ -1,0 +1,13 @@
+groups:
+  - name: payment-reconciliation
+    rules:
+      - alert: PaymentReconciliationNeedReview
+        expr: payment_reconciliation_need_review_total > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: payment-processor
+          route: pagerduty-slack
+        annotations:
+          summary: Payment reconciliation has transactions that need manual review
+          description: payment_reconciliation_need_review_total has been above zero for 5 minutes. Page payment operations and notify Slack.

@@ -11,6 +11,7 @@ public class PaymentTransaction
     public string PaymentMethod { get; private set; }
     public string IdempotencyKey { get; private set; }
     public string? GatewayTransactionId { get; private set; }
+    public string? FailureReason { get; private set; }
     public int ReconciliationAttempts { get; private set; }
     public DateTime? LastReconciledAt { get; private set; }
     public bool ResultEventPublished { get; private set; }
@@ -68,13 +69,17 @@ public class PaymentTransaction
             return;
         }
 
+        ResetResultEventPublishedWhenStatusChanges(PaymentTransactionStatus.Succeeded);
         GatewayTransactionId = gatewayTransactionId;
+        FailureReason = null;
         Status = PaymentTransactionStatus.Succeeded;
         Touch();
     }
 
-    public void MarkFailed()
+    public void MarkFailed(string? failureReason = null)
     {
+        ResetResultEventPublishedWhenStatusChanges(PaymentTransactionStatus.Failed);
+        FailureReason = failureReason;
         Status = PaymentTransactionStatus.Failed;
         Touch();
     }
@@ -92,6 +97,7 @@ public class PaymentTransaction
 
     public void MarkNeedReview()
     {
+        ResetResultEventPublishedWhenStatusChanges(PaymentTransactionStatus.NeedReview);
         Status = PaymentTransactionStatus.NeedReview;
         Touch();
     }
@@ -121,4 +127,12 @@ public class PaymentTransaction
     }
 
     private void Touch() => UpdatedAt = DateTime.UtcNow;
+
+    private void ResetResultEventPublishedWhenStatusChanges(PaymentTransactionStatus newStatus)
+    {
+        if (Status != newStatus)
+        {
+            ResultEventPublished = false;
+        }
+    }
 }

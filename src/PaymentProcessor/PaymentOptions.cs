@@ -6,5 +6,7 @@ public class PaymentOptions
     public decimal DefaultAmount { get; set; }
     public string DefaultCurrency { get; set; } = "USD";
     public string DefaultPaymentMethod { get; set; } = "Simulated";
+    public string GatewayWebhookSecret { get; set; } = string.Empty;
+    public int WebhookTimestampToleranceSeconds { get; set; } = 300;
 }
 

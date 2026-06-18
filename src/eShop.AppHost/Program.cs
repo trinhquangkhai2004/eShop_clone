@@ -14,6 +14,7 @@ var jaeger = builder
 var prometheus = builder
     .AddContainer("prometheus", "prom/prometheus", "v3.5.0")
     .WithBindMount(Path.Combine(observabilityPath, "prometheus.yml"), "/etc/prometheus/prometheus.yml", isReadOnly: true)
+    .WithBindMount(Path.Combine(observabilityPath, "alerts"), "/etc/prometheus/alerts", isReadOnly: true)
     .WithArgs("--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=2h")
     .WithEndpoint(port: 9090, targetPort: 9090, name: "http");
 

@@ -65,15 +65,24 @@ public class PaymentTransactionService(PaymentDbContext dbContext) : IPaymentTra
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task MarkFailedAsync(PaymentTransaction transaction, CancellationToken cancellationToken = default)
+    public async Task MarkFailedAsync(
+        PaymentTransaction transaction,
+        string? failureReason = null,
+        CancellationToken cancellationToken = default)
     {
-        transaction.MarkFailed();
+        transaction.MarkFailed(failureReason);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task MarkNeedReviewAsync(PaymentTransaction transaction, CancellationToken cancellationToken = default)
     {
         transaction.MarkNeedReview();
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task MarkExpiredAsync(PaymentTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        transaction.MarkExpired();
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -90,6 +99,50 @@ public class PaymentTransactionService(PaymentDbContext dbContext) : IPaymentTra
     {
         transaction.MarkResultPublished();
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public Task<PaymentTransaction?> FindByIdAsync(
+        int paymentTransactionId,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.PaymentTransactions
+            .FirstOrDefaultAsync(t => t.Id == paymentTransactionId, cancellationToken);
+    }
+
+    public Task<PaymentTransaction?> FindByGatewayTransactionIdAsync(
+        string gatewayTransactionId,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.PaymentTransactions
+            .FirstOrDefaultAsync(t => t.GatewayTransactionId == gatewayTransactionId, cancellationToken);
+    }
+
+    public Task<PaymentTransaction?> FindByOrderIdAsync(
+        int orderId,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.PaymentTransactions
+            .FirstOrDefaultAsync(t => t.OrderId == orderId, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<PaymentTransaction>> FindNeedReviewAsync(
+        int maxCount,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.PaymentTransactions
+            .AsNoTracking()
+            .Where(t => t.Status == PaymentTransactionStatus.NeedReview)
+            .OrderBy(t => t.UpdatedAt)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> CountByStatusAsync(
+        PaymentTransactionStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.PaymentTransactions
+            .CountAsync(t => t.Status == status, cancellationToken);
     }
 
     public async Task<IReadOnlyList<PaymentTransaction>> FindPendingForReconciliationAsync(
@@ -112,7 +165,10 @@ public class PaymentTransactionService(PaymentDbContext dbContext) : IPaymentTra
     {
         return await dbContext.PaymentTransactions
             .Where(t =>
-                (t.Status == PaymentTransactionStatus.Succeeded || t.Status == PaymentTransactionStatus.Failed)
+                (t.Status == PaymentTransactionStatus.Succeeded
+                    || t.Status == PaymentTransactionStatus.Failed
+                    || t.Status == PaymentTransactionStatus.Expired
+                    || t.Status == PaymentTransactionStatus.NeedReview)
                 && !t.ResultEventPublished)
             .OrderBy(t => t.UpdatedAt)
             .Take(maxCount)
@@ -126,7 +182,7 @@ public class PaymentTransactionService(PaymentDbContext dbContext) : IPaymentTra
     {
         return dbContext.PaymentTransactions
             .FirstOrDefaultAsync(
-                t => t.IdempotencyKey == idempotencyKey || t.OrderId == orderId,
+                t => t.IdempotencyKey == idempotencyKey,
                 cancellationToken);
     }
 }

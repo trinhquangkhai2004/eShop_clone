@@ -8,6 +8,7 @@ global using eShop.PaymentProcessor.Infrastructure;
 global using eShop.PaymentProcessor.Repair;
 global using eShop.PaymentProcessor.Services;
 global using eShop.PaymentProcessor.Telemetry;
+global using eShop.PaymentProcessor.Webhook;
 global using eShop.PaymentProcessor.Workers;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Metadata.Builders;

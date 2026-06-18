@@ -296,6 +296,146 @@
                                       },
                        "fieldConfig":  {
                                            "defaults":  {
+                                                            "unit":  "short"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  8,
+                                       "w":  6,
+                                       "x":  0,
+                                       "y":  14
+                                   },
+                       "id":  13,
+                       "options":  {
+                                       "colorMode":  "value",
+                                       "graphMode":  "area",
+                                       "justifyMode":  "auto",
+                                       "orientation":  "auto",
+                                       "reduceOptions":  {
+                                                             "calcs":  [
+                                                                           "lastNotNull"
+                                                                       ],
+                                                             "fields":  "",
+                                                             "values":  false
+                                                         },
+                                       "textMode":  "auto"
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "max(payment_need_review_count) OR on() vector(0)",
+                                           "legendFormat":  "NeedReview",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "NeedReview Current",
+                       "type":  "stat"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "unit":  "ms"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  8,
+                                       "w":  12,
+                                       "x":  6,
+                                       "y":  14
+                                   },
+                       "id":  14,
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "table",
+                                                      "placement":  "bottom",
+                                                      "showLegend":  true
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "multi",
+                                                       "sort":  "none"
+                                                   }
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "histogram_quantile(0.95, sum by (le) (rate(payment_reconciliation_cycle_duration_ms_milliseconds_bucket[5m]))) or histogram_quantile(0.95, sum by (le) (rate(payment_reconciliation_cycle_duration_ms_bucket[5m])))",
+                                           "legendFormat":  "p95",
+                                           "refId":  "A"
+                                       },
+                                       {
+                                           "expr":  "histogram_quantile(0.50, sum by (le) (rate(payment_reconciliation_cycle_duration_ms_milliseconds_bucket[5m]))) or histogram_quantile(0.50, sum by (le) (rate(payment_reconciliation_cycle_duration_ms_bucket[5m])))",
+                                           "legendFormat":  "p50",
+                                           "refId":  "B"
+                                       }
+                                   ],
+                       "title":  "Reconciliation Cycle Latency",
+                       "type":  "timeseries"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
+                                                            "color":  {
+                                                                          "mode":  "palette-classic"
+                                                                      },
+                                                            "custom":  {
+                                                                           "drawStyle":  "line",
+                                                                           "fillOpacity":  10,
+                                                                           "lineWidth":  2,
+                                                                           "showPoints":  "never"
+                                                                       },
+                                                            "unit":  "ops"
+                                                        },
+                                           "overrides":  [
+
+                                                         ]
+                                       },
+                       "gridPos":  {
+                                       "h":  8,
+                                       "w":  6,
+                                       "x":  18,
+                                       "y":  14
+                                   },
+                       "id":  15,
+                       "options":  {
+                                       "legend":  {
+                                                      "displayMode":  "table",
+                                                      "placement":  "bottom",
+                                                      "showLegend":  true
+                                                  },
+                                       "tooltip":  {
+                                                       "mode":  "multi",
+                                                       "sort":  "none"
+                                                   }
+                                   },
+                       "targets":  [
+                                       {
+                                           "expr":  "sum by (outcome) (rate(payment_reconciliation_processed_total[5m]))",
+                                           "legendFormat":  "{{outcome}}",
+                                           "refId":  "A"
+                                       }
+                                   ],
+                       "title":  "Reconciliation Processed Rate",
+                       "type":  "timeseries"
+                   },
+                   {
+                       "datasource":  {
+                                          "type":  "prometheus",
+                                          "uid":  "prometheus"
+                                      },
+                       "fieldConfig":  {
+                                           "defaults":  {
                                                             "color":  {
                                                                           "mode":  "palette-classic"
                                                                       },
@@ -315,7 +455,7 @@
                                        "h":  8,
                                        "w":  12,
                                        "x":  0,
-                                       "y":  14
+                                       "y":  22
                                    },
                        "id":  10,
                        "options":  {
@@ -365,7 +505,7 @@
                                        "h":  8,
                                        "w":  12,
                                        "x":  12,
-                                       "y":  14
+                                       "y":  22
                                    },
                        "id":  11,
                        "options":  {
@@ -411,7 +551,7 @@
                                        "h":  8,
                                        "w":  24,
                                        "x":  0,
-                                       "y":  22
+                                       "y":  30
                                    },
                        "id":  12,
                        "options":  {
@@ -429,7 +569,7 @@
                                                           },
                                            "format":  "table",
                                            "rawQuery":  true,
-                                           "rawSql":  "select\n  \"OrderId\" as \"Order ID\",\n  \"Status\" as \"Status\",\n  round(extract(epoch from (now() at time zone 'utc' - \"UpdatedAt\"))) as \"Processing Age Seconds\",\n  \"IdempotencyKey\" as \"Idempotency Key\",\n  \"CreatedAt\" as \"Created At\",\n  \"UpdatedAt\" as \"Updated At\"\nfrom payment.\"PaymentTransactions\"\nwhere \"Status\" = 'Processing'\n  and \"UpdatedAt\" < (now() at time zone 'utc' - interval '60 seconds')\norder by \"UpdatedAt\" asc\nlimit 20;",
+                                           "rawSql":  "select\n  \"OrderId\" as \"Order ID\",\n  \"Status\" as \"Status\",\n  round(extract(epoch from (now() at time zone \u0027utc\u0027 - \"UpdatedAt\"))) as \"Processing Age Seconds\",\n  \"IdempotencyKey\" as \"Idempotency Key\",\n  \"CreatedAt\" as \"Created At\",\n  \"UpdatedAt\" as \"Updated At\"\nfrom payment.\"PaymentTransactions\"\nwhere \"Status\" = \u0027Processing\u0027\n  and \"UpdatedAt\" \u003c (now() at time zone \u0027utc\u0027 - interval \u002760 seconds\u0027)\norder by \"UpdatedAt\" asc\nlimit 20;",
                                            "refId":  "A"
                                        }
                                    ],
@@ -453,7 +593,7 @@
                                        "h":  10,
                                        "w":  24,
                                        "x":  0,
-                                       "y":  30
+                                       "y":  38
                                    },
                        "id":  7,
                        "options":  {
@@ -478,27 +618,27 @@
                        "title":  "Recent Transactions",
                        "type":  "table"
                    },
-                    {
-                        "gridPos":  {
-                                        "h":  9,
-                                        "w":  24,
-                                        "x":  0,
-                                        "y":  40
-                                    },
-                        "id":  9,
-                        "options":  {
-                                        "mode":  "html",
-                                        "content":  "<div style=\"font-family:Inter,Arial,sans-serif;color:#f3f6f9;padding:16px;display:flex;flex-direction:column;align-items:center;\"><div style=\"align-self:flex-start;margin-bottom:24px;color:#9aa8b8;font-size:14px;\">Selected order: <strong style=\"color:#fff\">${order_id}</strong></div><div style=\"display:flex;flex-direction:column;align-items:center;gap:12px;\"><div style=\"width:180px;padding:12px;background:#1f2937;border:2px solid #6366f1;border-radius:24px;text-align:center;\"><div style=\"font-weight:700;color:#fff;\">StockConfirmed</div><div style=\"font-size:11px;color:#9aa8b8;\">EventBus</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:220px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;\">Create/Get Txn</div><div style=\"font-size:11px;color:#9aa8b8;\"><span style=\"color:#5d7085;\">payment.create_or_get_transaction</span></div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"display:flex;align-items:center;gap:16px;transform:translateX(96px);\"><div style=\"width:180px;padding:12px;background:#2b2311;border:1px solid #c58a21;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#d8b66f;\">Idempotency Hit?</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&rarr;</div><div style=\"width:140px;padding:12px;background:#2b1719;border:1px dashed #b64a55;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#f0a1aa;\">Stop (Hit)</div><div style=\"font-size:11px;color:#9aa8b8;\">No duplicate event</div></div></div><div style=\"display:flex;align-items:center;gap:8px;\"><div style=\"color:#8fa1b5;font-size:12px;\">[Miss]</div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div></div><div style=\"width:180px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;\">Mark Processing</div><div style=\"font-size:11px;color:#9aa8b8;\">DB Status: Processing</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:180px;padding:12px;background:#2d1a3f;border:1px solid #7b4f9c;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#e1c3f5;\">Gateway Charge</div><div style=\"font-size:11px;color:#9aa8b8;\"><span style=\"color:#5d7085;\">payment.gateway.charge</span></div></div><div style=\"display:flex;align-items:flex-start;gap:32px;margin-top:8px;\"><div style=\"display:flex;flex-direction:column;align-items:center;gap:8px;\"><div style=\"color:#8ee6b8;font-size:12px;\">[Success]</div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:160px;padding:12px;background:#13271f;border:1px solid #2f8f5b;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#8ee6b8;\">Succeeded</div><div style=\"font-size:11px;color:#9aa8b8;\">DB Status: Succeeded</div></div></div><div style=\"display:flex;flex-direction:column;align-items:center;gap:8px;\"><div style=\"color:#f0a1aa;font-size:12px;\">[Failure]</div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:160px;padding:12px;background:#2b1719;border:1px solid #b64a55;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;color:#f0a1aa;\">Failed</div><div style=\"font-size:11px;color:#9aa8b8;\">DB Status: Failed</div></div></div></div><div style=\"display:flex;justify-content:space-between;width:180px;margin-top:-4px;margin-bottom:-4px;\"><div style=\"color:#8fa1b5;font-size:24px;\">&searr;</div><div style=\"color:#8fa1b5;font-size:24px;\">&swarr;</div></div><div style=\"width:220px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;\">Publish Result Event</div><div style=\"font-size:11px;color:#9aa8b8;\">Succeeded / Failed Event<br><span style=\"color:#5d7085;\">payment.publish_result_event</span></div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:180px;padding:12px;background:#1f2937;border:2px solid #6366f1;border-radius:24px;text-align:center;\"><div style=\"font-weight:700;color:#fff;\">Ordering API</div><div style=\"font-size:11px;color:#9aa8b8;\">Consumes Event</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:180px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"><div style=\"font-weight:700;\">Order Paid / Cancelled</div><div style=\"font-size:11px;color:#9aa8b8;\">Ordering DB Status Updated</div></div><div style=\"color:#8fa1b5;font-size:24px;\">&darr;</div><div style=\"width:180px;padding:12px;background:#13271f;border:2px solid #2f8f5b;border-radius:24px;text-align:center;\"><div style=\"font-weight:700;color:#8ee6b8;\">Order Status Updated</div></div></div></div>"
-                                    },
-                        "title":  "Payment Workflow Diagram",
-                        "type":  "text"
-                    },
-                    {
+                   {
                        "gridPos":  {
                                        "h":  9,
                                        "w":  24,
                                        "x":  0,
-                                       "y":  49
+                                       "y":  48
+                                   },
+                       "id":  9,
+                       "options":  {
+                                       "mode":  "html",
+                                       "content":  "\u003cdiv style=\"font-family:Inter,Arial,sans-serif;color:#f3f6f9;padding:16px;display:flex;flex-direction:column;align-items:center;\"\u003e\u003cdiv style=\"align-self:flex-start;margin-bottom:24px;color:#9aa8b8;font-size:14px;\"\u003eSelected order: \u003cstrong style=\"color:#fff\"\u003e${order_id}\u003c/strong\u003e\u003c/div\u003e\u003cdiv style=\"display:flex;flex-direction:column;align-items:center;gap:12px;\"\u003e\u003cdiv style=\"width:180px;padding:12px;background:#1f2937;border:2px solid #6366f1;border-radius:24px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;color:#fff;\"\u003eStockConfirmed\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003eEventBus\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026darr;\u003c/div\u003e\u003cdiv style=\"width:220px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;\"\u003eCreate/Get Txn\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003e\u003cspan style=\"color:#5d7085;\"\u003epayment.create_or_get_transaction\u003c/span\u003e\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026darr;\u003c/div\u003e\u003cdiv style=\"display:flex;align-items:center;gap:16px;transform:translateX(96px);\"\u003e\u003cdiv style=\"width:180px;padding:12px;background:#2b2311;border:1px solid #c58a21;border-radius:8px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;color:#d8b66f;\"\u003eIdempotency Hit?\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026rarr;\u003c/div\u003e\u003cdiv style=\"width:140px;padding:12px;background:#2b1719;border:1px dashed #b64a55;border-radius:8px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;color:#f0a1aa;\"\u003eStop (Hit)\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003eNo duplicate event\u003c/div\u003e\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"display:flex;align-items:center;gap:8px;\"\u003e\u003cdiv style=\"color:#8fa1b5;font-size:12px;\"\u003e[Miss]\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026darr;\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"width:180px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;\"\u003eMark Processing\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003eDB Status: Processing\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026darr;\u003c/div\u003e\u003cdiv style=\"width:180px;padding:12px;background:#2d1a3f;border:1px solid #7b4f9c;border-radius:8px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;color:#e1c3f5;\"\u003eGateway Charge\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003e\u003cspan style=\"color:#5d7085;\"\u003epayment.gateway.charge\u003c/span\u003e\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"display:flex;align-items:flex-start;gap:32px;margin-top:8px;\"\u003e\u003cdiv style=\"display:flex;flex-direction:column;align-items:center;gap:8px;\"\u003e\u003cdiv style=\"color:#8ee6b8;font-size:12px;\"\u003e[Success]\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026darr;\u003c/div\u003e\u003cdiv style=\"width:160px;padding:12px;background:#13271f;border:1px solid #2f8f5b;border-radius:8px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;color:#8ee6b8;\"\u003eSucceeded\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003eDB Status: Succeeded\u003c/div\u003e\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"display:flex;flex-direction:column;align-items:center;gap:8px;\"\u003e\u003cdiv style=\"color:#f0a1aa;font-size:12px;\"\u003e[Failure]\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026darr;\u003c/div\u003e\u003cdiv style=\"width:160px;padding:12px;background:#2b1719;border:1px solid #b64a55;border-radius:8px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;color:#f0a1aa;\"\u003eFailed\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003eDB Status: Failed\u003c/div\u003e\u003c/div\u003e\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"display:flex;justify-content:space-between;width:180px;margin-top:-4px;margin-bottom:-4px;\"\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026searr;\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026swarr;\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"width:220px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;\"\u003ePublish Result Event\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003eSucceeded / Failed Event\u003cbr\u003e\u003cspan style=\"color:#5d7085;\"\u003epayment.publish_result_event\u003c/span\u003e\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026darr;\u003c/div\u003e\u003cdiv style=\"width:180px;padding:12px;background:#1f2937;border:2px solid #6366f1;border-radius:24px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;color:#fff;\"\u003eOrdering API\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003eConsumes Event\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026darr;\u003c/div\u003e\u003cdiv style=\"width:180px;padding:12px;background:#17212b;border:1px solid #34465a;border-radius:8px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;\"\u003eOrder Paid / Cancelled\u003c/div\u003e\u003cdiv style=\"font-size:11px;color:#9aa8b8;\"\u003eOrdering DB Status Updated\u003c/div\u003e\u003c/div\u003e\u003cdiv style=\"color:#8fa1b5;font-size:24px;\"\u003e\u0026darr;\u003c/div\u003e\u003cdiv style=\"width:180px;padding:12px;background:#13271f;border:2px solid #2f8f5b;border-radius:24px;text-align:center;\"\u003e\u003cdiv style=\"font-weight:700;color:#8ee6b8;\"\u003eOrder Status Updated\u003c/div\u003e\u003c/div\u003e\u003c/div\u003e\u003c/div\u003e"
+                                   },
+                       "title":  "Payment Workflow Diagram",
+                       "type":  "text"
+                   },
+                   {
+                       "gridPos":  {
+                                       "h":  9,
+                                       "w":  24,
+                                       "x":  0,
+                                       "y":  57
                                    },
                        "id":  8,
                        "options":  {

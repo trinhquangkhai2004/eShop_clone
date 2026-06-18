@@ -18,6 +18,10 @@ public sealed class PaymentProcessorTelemetry : IDisposable
     private readonly Counter<long> _paymentReconciliationNeedReviewTotal;
     private readonly Counter<long> _chaosInjectionsTotal;
     private readonly Histogram<double> _paymentProcessingDurationMs;
+    private readonly Histogram<double> _paymentReconciliationCycleDurationMs;
+    private int _needReviewCount;
+    private int _pendingCount;
+    private int _processingCount;
 
     public ActivitySource ActivitySource { get; } = new(ActivitySourceName);
 
@@ -55,6 +59,31 @@ public sealed class PaymentProcessorTelemetry : IDisposable
             "payment_processing_duration_ms",
             unit: "ms",
             description: "Payment processing duration in milliseconds.");
+
+        _paymentReconciliationCycleDurationMs = _meter.CreateHistogram<double>(
+            "payment_reconciliation_cycle_duration_ms",
+            unit: "ms",
+            description: "Payment reconciliation cycle duration in milliseconds.");
+
+        _meter.CreateObservableGauge(
+            "payment_need_review_count",
+            () => Volatile.Read(ref _needReviewCount),
+            description: "Current number of payment transactions waiting for manual review.");
+
+        _meter.CreateObservableGauge(
+            "payment_pending_count",
+            () => Volatile.Read(ref _pendingCount),
+            description: "Current number of pending payment transactions.");
+
+        _meter.CreateObservableGauge(
+            "payment_processing_count",
+            () => Volatile.Read(ref _processingCount),
+            description: "Current number of processing payment transactions.");
+
+        _meter.CreateObservableGauge(
+            "payment_pending_transactions_total",
+            () => Volatile.Read(ref _pendingCount) + Volatile.Read(ref _processingCount),
+            description: "Current number of active pending or processing payment transactions.");
     }
 
     public Activity? StartActivity(string name) =>
@@ -112,6 +141,20 @@ public sealed class PaymentProcessorTelemetry : IDisposable
         _paymentProcessingDurationMs.Record(duration.TotalMilliseconds,
             new KeyValuePair<string, object?>("status", status.ToString()),
             new KeyValuePair<string, object?>("idempotency_hit", idempotencyHit));
+    }
+
+    public void RecordReconciliationCycle(TimeSpan duration, int processedCount, string outcome)
+    {
+        _paymentReconciliationCycleDurationMs.Record(duration.TotalMilliseconds,
+            new KeyValuePair<string, object?>("outcome", outcome),
+            new KeyValuePair<string, object?>("processed_count", processedCount));
+    }
+
+    public void SetOperationalSnapshot(int needReviewCount, int pendingCount, int processingCount)
+    {
+        Volatile.Write(ref _needReviewCount, needReviewCount);
+        Volatile.Write(ref _pendingCount, pendingCount);
+        Volatile.Write(ref _processingCount, processingCount);
     }
 
     public void Dispose()

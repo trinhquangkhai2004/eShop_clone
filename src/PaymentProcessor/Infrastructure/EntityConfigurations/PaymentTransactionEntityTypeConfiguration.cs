@@ -42,6 +42,9 @@ class PaymentTransactionEntityTypeConfiguration : IEntityTypeConfiguration<Payme
         builder.Property(t => t.GatewayTransactionId)
             .HasMaxLength(256);
 
+        builder.Property(t => t.FailureReason)
+            .HasMaxLength(512);
+
         builder.Property(t => t.ReconciliationAttempts)
             .IsRequired();
 
@@ -61,5 +64,9 @@ class PaymentTransactionEntityTypeConfiguration : IEntityTypeConfiguration<Payme
 
         builder.HasIndex(t => t.IdempotencyKey)
             .IsUnique();
+
+        builder.HasIndex(t => new { t.Status, t.UpdatedAt });
+
+        builder.HasIndex(t => new { t.Status, t.ResultEventPublished });
     }
 }

@@ -11,16 +11,20 @@ public sealed class ReconciliationWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var idleDelaySeconds = 0;
+
         while (!stoppingToken.IsCancellationRequested)
         {
             var reconciliationOptions = options.CurrentValue;
-            var interval = TimeSpan.FromSeconds(Math.Max(1, reconciliationOptions.IntervalSeconds));
+            var processedCount = 0;
 
             if (reconciliationOptions.Enabled)
             {
+                var stopwatch = Stopwatch.StartNew();
                 try
                 {
-                    await ReconcileAsync(reconciliationOptions, stoppingToken);
+                    processedCount = await ReconcileAsync(reconciliationOptions, stoppingToken);
+                    telemetry.RecordReconciliationCycle(stopwatch.Elapsed, processedCount, "success");
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
@@ -28,15 +32,21 @@ public sealed class ReconciliationWorker(
                 }
                 catch (Exception ex)
                 {
+                    telemetry.RecordReconciliationCycle(stopwatch.Elapsed, processedCount, "failure");
                     logger.LogError(ex, "Payment reconciliation cycle failed.");
                 }
             }
 
-            await Task.Delay(interval, stoppingToken);
+            idleDelaySeconds = GetNextDelaySeconds(
+                reconciliationOptions,
+                processedCount,
+                idleDelaySeconds);
+
+            await Task.Delay(TimeSpan.FromSeconds(idleDelaySeconds), stoppingToken);
         }
     }
 
-    private async Task ReconcileAsync(
+    private async Task<int> ReconcileAsync(
         ReconciliationOptions reconciliationOptions,
         CancellationToken cancellationToken)
     {
@@ -47,12 +57,17 @@ public sealed class ReconciliationWorker(
 
         var batchSize = Math.Max(1, reconciliationOptions.BatchSize);
         var staleBefore = DateTime.UtcNow.AddSeconds(-Math.Max(1, reconciliationOptions.StaleTransactionThresholdSeconds));
+        var expirePendingBefore = reconciliationOptions.ExpirationThresholdSeconds > 0
+            ? DateTime.UtcNow.AddSeconds(-reconciliationOptions.ExpirationThresholdSeconds)
+            : (DateTime?)null;
         var maxAttempts = Math.Max(1, reconciliationOptions.MaxAttempts);
 
         var staleTransactions = await paymentTransactionService.FindPendingForReconciliationAsync(
             staleBefore,
             batchSize,
             cancellationToken);
+
+        var processedCount = 0;
 
         foreach (var transaction in staleTransactions)
         {
@@ -61,8 +76,10 @@ public sealed class ReconciliationWorker(
                 bankGatewayClient,
                 paymentTransactionService,
                 resultEventPublisher,
+                expirePendingBefore,
                 maxAttempts,
                 cancellationToken);
+            processedCount++;
         }
 
         var unpublishedTransactions = await paymentTransactionService.FindUnpublishedTerminalResultsAsync(
@@ -72,7 +89,10 @@ public sealed class ReconciliationWorker(
         foreach (var transaction in unpublishedTransactions)
         {
             await PublishRecoveredResultAsync(transaction, resultEventPublisher, cancellationToken);
+            processedCount++;
         }
+
+        return processedCount;
     }
 
     private async Task ReconcileTransactionAsync(
@@ -80,6 +100,7 @@ public sealed class ReconciliationWorker(
         IBankGatewayClient bankGatewayClient,
         IPaymentTransactionService paymentTransactionService,
         IOrderPaymentResultEventPublisher resultEventPublisher,
+        DateTime? expirePendingBefore,
         int maxAttempts,
         CancellationToken cancellationToken)
     {
@@ -89,6 +110,14 @@ public sealed class ReconciliationWorker(
 
         try
         {
+            if (ShouldExpirePendingTransaction(transaction, expirePendingBefore))
+            {
+                await paymentTransactionService.MarkExpiredAsync(transaction, cancellationToken);
+                await resultEventPublisher.PublishAsync(transaction, cancellationToken);
+                telemetry.RecordReconciliationProcessed(transaction.Status, "pending_expired");
+                return;
+            }
+
             transaction.MarkReconciled();
             var result = await bankGatewayClient.QueryStatusAsync(transaction, cancellationToken);
             activity?.SetTag("payment.gateway.status", result.Status.ToString());
@@ -105,7 +134,10 @@ public sealed class ReconciliationWorker(
                     break;
 
                 case BankGatewayPaymentStatus.Failed:
-                    await paymentTransactionService.MarkFailedAsync(transaction, cancellationToken);
+                    await paymentTransactionService.MarkFailedAsync(
+                        transaction,
+                        result.FailureReason ?? result.Status.ToString(),
+                        cancellationToken);
                     await resultEventPublisher.PublishAsync(transaction, cancellationToken);
                     telemetry.RecordReconciliationProcessed(transaction.Status, "bank_status_failed");
                     break;
@@ -115,7 +147,10 @@ public sealed class ReconciliationWorker(
                         transaction,
                         maxAttempts,
                         cancellationToken);
-                    RecordNeedReviewIfRequired(transaction);
+                    await PublishNeedReviewIfRequiredAsync(
+                        transaction,
+                        resultEventPublisher,
+                        cancellationToken);
                     telemetry.RecordReconciliationProcessed(transaction.Status, "bank_status_unresolved");
                     break;
             }
@@ -129,7 +164,10 @@ public sealed class ReconciliationWorker(
                 transaction,
                 maxAttempts,
                 cancellationToken);
-            RecordNeedReviewIfRequired(transaction);
+            await PublishNeedReviewIfRequiredAsync(
+                transaction,
+                resultEventPublisher,
+                cancellationToken);
         }
     }
 
@@ -157,12 +195,45 @@ public sealed class ReconciliationWorker(
         }
     }
 
-    private void RecordNeedReviewIfRequired(PaymentTransaction transaction)
+    private async Task PublishNeedReviewIfRequiredAsync(
+        PaymentTransaction transaction,
+        IOrderPaymentResultEventPublisher resultEventPublisher,
+        CancellationToken cancellationToken)
     {
         if (transaction.Status == PaymentTransactionStatus.NeedReview)
         {
+            await resultEventPublisher.PublishAsync(transaction, cancellationToken);
             telemetry.RecordReconciliationNeedReview(transaction.PaymentMethod);
         }
+    }
+
+    private static bool ShouldExpirePendingTransaction(
+        PaymentTransaction transaction,
+        DateTime? expirePendingBefore)
+    {
+        return expirePendingBefore.HasValue
+            && transaction.Status == PaymentTransactionStatus.Pending
+            && transaction.CreatedAt < expirePendingBefore.Value;
+    }
+
+    internal static int GetNextDelaySeconds(
+        ReconciliationOptions reconciliationOptions,
+        int processedCount,
+        int currentIdleDelaySeconds)
+    {
+        var intervalSeconds = Math.Max(1, reconciliationOptions.IntervalSeconds);
+        if (!reconciliationOptions.Enabled || processedCount > 0)
+        {
+            return intervalSeconds;
+        }
+
+        var maxIdleBackoffSeconds = Math.Max(intervalSeconds, reconciliationOptions.MaxIdleBackoffSeconds);
+        if (currentIdleDelaySeconds <= 0)
+        {
+            return intervalSeconds;
+        }
+
+        return Math.Min(currentIdleDelaySeconds * 2, maxIdleBackoffSeconds);
     }
 
     private static void SetPaymentTransactionTags(Activity? activity, PaymentTransaction transaction)

@@ -20,9 +20,14 @@ public interface IPaymentTransactionService
         string gatewayTransactionId,
         CancellationToken cancellationToken = default);
 
-    Task MarkFailedAsync(PaymentTransaction transaction, CancellationToken cancellationToken = default);
+    Task MarkFailedAsync(
+        PaymentTransaction transaction,
+        string? failureReason = null,
+        CancellationToken cancellationToken = default);
 
     Task MarkNeedReviewAsync(PaymentTransaction transaction, CancellationToken cancellationToken = default);
+
+    Task MarkExpiredAsync(PaymentTransaction transaction, CancellationToken cancellationToken = default);
 
     Task RecordReconciliationAttemptAsync(
         PaymentTransaction transaction,
@@ -30,6 +35,26 @@ public interface IPaymentTransactionService
         CancellationToken cancellationToken = default);
 
     Task MarkResultPublishedAsync(PaymentTransaction transaction, CancellationToken cancellationToken = default);
+
+    Task<PaymentTransaction?> FindByIdAsync(
+        int paymentTransactionId,
+        CancellationToken cancellationToken = default);
+
+    Task<PaymentTransaction?> FindByGatewayTransactionIdAsync(
+        string gatewayTransactionId,
+        CancellationToken cancellationToken = default);
+
+    Task<PaymentTransaction?> FindByOrderIdAsync(
+        int orderId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<PaymentTransaction>> FindNeedReviewAsync(
+        int maxCount,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountByStatusAsync(
+        PaymentTransactionStatus status,
+        CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<PaymentTransaction>> FindPendingForReconciliationAsync(
         DateTime staleBefore,

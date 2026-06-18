@@ -4,9 +4,10 @@ public static class ChaosEndpoints
 {
     public static IEndpointRouteBuilder MapChaosEndpoints(
         this IEndpointRouteBuilder routes,
-        IHostEnvironment environment)
+        IHostEnvironment environment,
+        IConfiguration configuration)
     {
-        if (!environment.IsDevelopment())
+        if (!PaymentEndpointAccess.IsSensitiveEndpointEnabled(environment, configuration))
         {
             return routes;
         }

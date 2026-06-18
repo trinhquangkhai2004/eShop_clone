@@ -47,6 +47,10 @@ namespace eShop.PaymentProcessor.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -88,6 +92,10 @@ namespace eShop.PaymentProcessor.Migrations
 
                     b.HasIndex("OrderId")
                         .IsUnique();
+
+                    b.HasIndex("Status", "ResultEventPublished");
+
+                    b.HasIndex("Status", "UpdatedAt");
 
                     b.ToTable("PaymentTransactions", "payment");
                 });

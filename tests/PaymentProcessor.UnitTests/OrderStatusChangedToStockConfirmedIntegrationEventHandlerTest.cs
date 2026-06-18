@@ -110,6 +110,110 @@ public class OrderStatusChangedToStockConfirmedIntegrationEventHandlerTest
     }
 
     [TestMethod]
+    public async Task Handle_NewFailedPayment_MarksFailedWithReasonAndPublishesFailedEvent()
+    {
+        var paymentTransactionService = Substitute.For<IPaymentTransactionService>();
+        var bankGatewayClient = Substitute.For<IBankGatewayClient>();
+        bankGatewayClient.Provider.Returns("Simulated");
+        var resultEventPublisher = Substitute.For<IOrderPaymentResultEventPublisher>();
+        var chaosState = new ChaosState();
+        var environment = Substitute.For<IHostEnvironment>();
+        var options = CreateOptions(paymentSucceeded: false);
+        using var telemetry = new PaymentProcessorTelemetry();
+        var logger = Substitute.For<ILogger<OrderStatusChangedToStockConfirmedIntegrationEventHandler>>();
+        var handler = new OrderStatusChangedToStockConfirmedIntegrationEventHandler(
+            paymentTransactionService,
+            bankGatewayClient,
+            resultEventPublisher,
+            telemetry,
+            chaosState,
+            environment,
+            options,
+            logger);
+
+        var transaction = new PaymentTransaction(
+            orderId: 12,
+            userId: "user-12",
+            amount: 129.99m,
+            currency: "USD",
+            paymentMethod: "Simulated",
+            idempotencyKey: "order:12:payment");
+
+        paymentTransactionService.CreateOrGetAsync(
+                12,
+                "user-12",
+                129.99m,
+                "USD",
+                "Simulated",
+                "order:12:payment",
+                Arg.Any<CancellationToken>())
+            .Returns(new CreateOrGetPaymentTransactionResult(transaction, IsIdempotencyHit: false));
+
+        bankGatewayClient.ChargeAsync(transaction, Arg.Any<CancellationToken>())
+            .Returns(BankGatewayResult.Failed("card_declined"));
+
+        await handler.Handle(new OrderStatusChangedToStockConfirmedIntegrationEvent(12, "user-12", 129.99m, "USD"));
+
+        await paymentTransactionService.Received(1)
+            .MarkProcessingAsync(transaction, Arg.Any<CancellationToken>());
+        await paymentTransactionService.Received(1)
+            .MarkFailedAsync(transaction, "card_declined", Arg.Any<CancellationToken>());
+        await resultEventPublisher.Received(1)
+            .PublishAsync(transaction, Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task Handle_IdempotencyHitTerminalUnpublished_PublishesRecoveredResultEvent()
+    {
+        var paymentTransactionService = Substitute.For<IPaymentTransactionService>();
+        var bankGatewayClient = Substitute.For<IBankGatewayClient>();
+        bankGatewayClient.Provider.Returns("Simulated");
+        var resultEventPublisher = Substitute.For<IOrderPaymentResultEventPublisher>();
+        var chaosState = new ChaosState();
+        var environment = Substitute.For<IHostEnvironment>();
+        var options = CreateOptions(paymentSucceeded: true);
+        using var telemetry = new PaymentProcessorTelemetry();
+        var logger = Substitute.For<ILogger<OrderStatusChangedToStockConfirmedIntegrationEventHandler>>();
+        var handler = new OrderStatusChangedToStockConfirmedIntegrationEventHandler(
+            paymentTransactionService,
+            bankGatewayClient,
+            resultEventPublisher,
+            telemetry,
+            chaosState,
+            environment,
+            options,
+            logger);
+
+        var transaction = new PaymentTransaction(
+            orderId: 12,
+            userId: "user-12",
+            amount: 129.99m,
+            currency: "USD",
+            paymentMethod: "Simulated",
+            idempotencyKey: "order:12:payment");
+        transaction.MarkSucceeded("sim-existing");
+
+        paymentTransactionService.CreateOrGetAsync(
+                12,
+                "user-12",
+                129.99m,
+                "USD",
+                "Simulated",
+                "order:12:payment",
+                Arg.Any<CancellationToken>())
+            .Returns(new CreateOrGetPaymentTransactionResult(transaction, IsIdempotencyHit: true));
+
+        await handler.Handle(new OrderStatusChangedToStockConfirmedIntegrationEvent(12, "user-12", 129.99m, "USD"));
+
+        await resultEventPublisher.Received(1)
+            .PublishAsync(transaction, Arg.Any<CancellationToken>());
+        await bankGatewayClient.DidNotReceive()
+            .QueryStatusAsync(Arg.Any<PaymentTransaction>(), Arg.Any<CancellationToken>());
+        await paymentTransactionService.DidNotReceive()
+            .MarkProcessingAsync(Arg.Any<PaymentTransaction>(), Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
     public async Task Handle_IdempotencyHitProcessing_ReconcilesBankStatusAndPublishesSucceededEvent()
     {
         var paymentTransactionService = Substitute.For<IPaymentTransactionService>();
