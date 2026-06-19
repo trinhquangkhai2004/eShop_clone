@@ -10,16 +10,29 @@ public class IntegrationEventLogService<TContext> : IIntegrationEventLogService,
     public IntegrationEventLogService(TContext context)
     {
         _context = context;
-        _eventTypes = Assembly.Load(Assembly.GetEntryAssembly().FullName)
-            .GetTypes()
-            .Where(t => t.Name.EndsWith(nameof(IntegrationEvent)))
+        _eventTypes = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(assembly => !assembly.IsDynamic)
+            .SelectMany(assembly =>
+            {
+                try
+                {
+                    return assembly.GetTypes().Where(type => type is not null);
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    return ex.Types.Where(type => type is not null)!;
+                }
+            })
+            .Where(t => t is not null && t.Name.EndsWith(nameof(IntegrationEvent)))
             .ToArray();
     }
 
     public async Task<IEnumerable<IntegrationEventLogEntry>> RetrieveEventLogsPendingToPublishAsync(Guid transactionId)
     {
         var result = await _context.Set<IntegrationEventLogEntry>()
-            .Where(e => e.TransactionId == transactionId && e.State == EventStateEnum.NotPublished)
+            .Where(e =>
+                e.TransactionId == transactionId
+                && (e.State == EventStateEnum.NotPublished || e.State == EventStateEnum.PublishedFailed))
             .ToListAsync();
 
         if (result.Count != 0)

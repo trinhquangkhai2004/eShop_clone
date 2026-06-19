@@ -16,5 +16,6 @@ public class PaymentDbContext(DbContextOptions<PaymentDbContext> options) : DbCo
     {
         modelBuilder.HasDefaultSchema("payment");
         modelBuilder.ApplyConfiguration(new PaymentTransactionEntityTypeConfiguration());
+        modelBuilder.UseIntegrationEventLogs();
     }
 }

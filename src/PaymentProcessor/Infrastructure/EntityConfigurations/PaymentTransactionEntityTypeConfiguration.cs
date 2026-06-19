@@ -50,6 +50,8 @@ class PaymentTransactionEntityTypeConfiguration : IEntityTypeConfiguration<Payme
 
         builder.Property(t => t.LastReconciledAt);
 
+        builder.Property(t => t.OutboxTransactionId);
+
         builder.Property(t => t.ResultEventPublished)
             .IsRequired();
 
@@ -68,5 +70,7 @@ class PaymentTransactionEntityTypeConfiguration : IEntityTypeConfiguration<Payme
         builder.HasIndex(t => new { t.Status, t.UpdatedAt });
 
         builder.HasIndex(t => new { t.Status, t.ResultEventPublished });
+
+        builder.HasIndex(t => t.OutboxTransactionId);
     }
 }

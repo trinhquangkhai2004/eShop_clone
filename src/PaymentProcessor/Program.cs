@@ -28,6 +28,7 @@ builder.Services.AddOptions<ReconciliationOptions>()
 builder.Services.AddMemoryCache();
 builder.Services.AddMigration<PaymentDbContext>();
 builder.Services.AddScoped<IPaymentTransactionService, PaymentTransactionService>();
+builder.Services.AddTransient<IIntegrationEventLogService, IntegrationEventLogService<PaymentDbContext>>();
 builder.Services.AddScoped<SimulatedBankGatewayClient>();
 builder.Services.AddSingleton<BankGatewayResiliencePipelineProvider>();
 builder.Services.AddScoped<IBankGatewayClient>(serviceProvider =>

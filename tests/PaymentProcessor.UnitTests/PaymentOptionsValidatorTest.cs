@@ -19,7 +19,7 @@ public class PaymentOptionsValidatorTest
             });
 
         Assert.IsTrue(result.Failed);
-        StringAssert.Contains(
+        Assert.Contains(
             string.Join(";", result.Failures),
             "PaymentOptions:DefaultCurrency must not be empty.");
     }

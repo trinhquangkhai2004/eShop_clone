@@ -113,6 +113,97 @@ public class PaymentTransactionServiceTest
         Assert.AreEqual(2, needReviewCount);
     }
 
+    [TestMethod]
+    public async Task MarkSucceededAsync_WithOutbox_PersistsPaymentAndEventInSameTransaction()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync(CancellationToken.None);
+        var options = CreateDbContextOptions(connection);
+
+        await using var dbContext = new PaymentDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync(CancellationToken.None);
+
+        var integrationEventLogService = new IntegrationEventLogService<PaymentDbContext>(dbContext);
+        var service = new PaymentTransactionService(dbContext, integrationEventLogService);
+        var transactionResult = await service.CreateOrGetAsync(
+            orderId: 120,
+            userId: "user-120",
+            amount: 120,
+            currency: "USD",
+            paymentMethod: "Simulated",
+            idempotencyKey: "order:120:payment",
+            cancellationToken: CancellationToken.None);
+
+        await service.MarkSucceededAsync(
+            transactionResult.Transaction,
+            "gateway-120",
+            CancellationToken.None);
+
+        var transaction = await dbContext.PaymentTransactions.SingleAsync(CancellationToken.None);
+        var outboxEvent = await dbContext.Set<IntegrationEventLogEntry>().SingleAsync(CancellationToken.None);
+
+        Assert.AreEqual(PaymentTransactionStatus.Succeeded, transaction.Status);
+        Assert.IsNotNull(transaction.OutboxTransactionId);
+        Assert.AreEqual(transaction.OutboxTransactionId, outboxEvent.TransactionId);
+        Assert.AreEqual(EventStateEnum.NotPublished, outboxEvent.State);
+        Assert.Contains(nameof(OrderPaymentSucceededIntegrationEvent), outboxEvent.EventTypeName);
+        Assert.Contains("\"OrderId\": 120", outboxEvent.Content);
+    }
+
+    [TestMethod]
+    public async Task PublishAsync_WithOutbox_PublishesPendingEventAndMarksPublished()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync(CancellationToken.None);
+        var options = CreateDbContextOptions(connection);
+
+        await using var dbContext = new PaymentDbContext(options);
+        await dbContext.Database.EnsureCreatedAsync(CancellationToken.None);
+
+        var integrationEventLogService = new IntegrationEventLogService<PaymentDbContext>(dbContext);
+        var service = new PaymentTransactionService(dbContext, integrationEventLogService);
+        var transactionResult = await service.CreateOrGetAsync(
+            orderId: 121,
+            userId: "user-121",
+            amount: 121,
+            currency: "USD",
+            paymentMethod: "Simulated",
+            idempotencyKey: "order:121:payment",
+            cancellationToken: CancellationToken.None);
+        await service.MarkSucceededAsync(
+            transactionResult.Transaction,
+            "gateway-121",
+            CancellationToken.None);
+
+        var eventBus = Substitute.For<IEventBus>();
+        IntegrationEvent publishedEvent = null!;
+        eventBus.PublishAsync(Arg.Do<IntegrationEvent>(integrationEvent => publishedEvent = integrationEvent))
+            .Returns(Task.CompletedTask);
+        var environment = Substitute.For<IHostEnvironment>();
+        environment.EnvironmentName.Returns(Environments.Production);
+        using var telemetry = new PaymentProcessorTelemetry();
+        var publisher = new OrderPaymentResultEventPublisher(
+            eventBus,
+            service,
+            new ChaosState(),
+            environment,
+            telemetry,
+            Substitute.For<ILogger<OrderPaymentResultEventPublisher>>(),
+            integrationEventLogService);
+
+        await publisher.PublishAsync(transactionResult.Transaction, CancellationToken.None);
+
+        var outboxEvent = await dbContext.Set<IntegrationEventLogEntry>().SingleAsync(CancellationToken.None);
+        Assert.AreEqual(EventStateEnum.Published, outboxEvent.State);
+        Assert.AreEqual(1, outboxEvent.TimesSent);
+        Assert.IsTrue(transactionResult.Transaction.ResultEventPublished);
+
+        var succeededEvent = publishedEvent as OrderPaymentSucceededIntegrationEvent;
+        Assert.IsNotNull(succeededEvent);
+        Assert.AreEqual(121, succeededEvent.OrderId);
+        Assert.AreEqual("gateway-121", succeededEvent.GatewayTransactionId);
+    }
+
     private static DbContextOptions<PaymentDbContext> CreateDbContextOptions(SqliteConnection connection)
     {
         return new DbContextOptionsBuilder<PaymentDbContext>()

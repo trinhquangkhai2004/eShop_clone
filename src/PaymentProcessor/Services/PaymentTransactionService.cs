@@ -3,7 +3,9 @@ using eShop.PaymentProcessor.Infrastructure;
 
 namespace eShop.PaymentProcessor.Services;
 
-public class PaymentTransactionService(PaymentDbContext dbContext) : IPaymentTransactionService
+public class PaymentTransactionService(
+    PaymentDbContext dbContext,
+    IIntegrationEventLogService? integrationEventLogService = null) : IPaymentTransactionService
 {
     public async Task<CreateOrGetPaymentTransactionResult> CreateOrGetAsync(
         int orderId,
@@ -62,7 +64,7 @@ public class PaymentTransactionService(PaymentDbContext dbContext) : IPaymentTra
         CancellationToken cancellationToken = default)
     {
         transaction.MarkSucceeded(gatewayTransactionId);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await SaveTerminalStatusWithOutboxAsync(transaction, cancellationToken);
     }
 
     public async Task MarkFailedAsync(
@@ -71,19 +73,19 @@ public class PaymentTransactionService(PaymentDbContext dbContext) : IPaymentTra
         CancellationToken cancellationToken = default)
     {
         transaction.MarkFailed(failureReason);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await SaveTerminalStatusWithOutboxAsync(transaction, cancellationToken);
     }
 
     public async Task MarkNeedReviewAsync(PaymentTransaction transaction, CancellationToken cancellationToken = default)
     {
         transaction.MarkNeedReview();
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await SaveTerminalStatusWithOutboxAsync(transaction, cancellationToken);
     }
 
     public async Task MarkExpiredAsync(PaymentTransaction transaction, CancellationToken cancellationToken = default)
     {
         transaction.MarkExpired();
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await SaveTerminalStatusWithOutboxAsync(transaction, cancellationToken);
     }
 
     public async Task RecordReconciliationAttemptAsync(
@@ -92,6 +94,12 @@ public class PaymentTransactionService(PaymentDbContext dbContext) : IPaymentTra
         CancellationToken cancellationToken = default)
     {
         transaction.IncrementReconciliationAttempt(maxAttempts);
+        if (transaction.Status == PaymentTransactionStatus.NeedReview)
+        {
+            await SaveTerminalStatusWithOutboxAsync(transaction, cancellationToken);
+            return;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -184,5 +192,34 @@ public class PaymentTransactionService(PaymentDbContext dbContext) : IPaymentTra
             .FirstOrDefaultAsync(
                 t => t.IdempotencyKey == idempotencyKey,
                 cancellationToken);
+    }
+
+    private async Task SaveTerminalStatusWithOutboxAsync(
+        PaymentTransaction transaction,
+        CancellationToken cancellationToken)
+    {
+        if (integrationEventLogService is null)
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var dbTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            transaction.MarkOutboxTransaction(dbTransaction.TransactionId);
+            var integrationEvent = PaymentResultIntegrationEventFactory.Create(transaction);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            if (integrationEvent is not null)
+            {
+                await integrationEventLogService.SaveEventAsync(integrationEvent, dbTransaction);
+            }
+
+            await dbTransaction.CommitAsync(cancellationToken);
+        });
     }
 }

@@ -23,6 +23,37 @@ namespace eShop.PaymentProcessor.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("eShop.IntegrationEventLogEF.IntegrationEventLogEntry", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventTypeName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TimesSent")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("EventId");
+
+                    b.ToTable("IntegrationEventLog", "payment");
+                });
+
             modelBuilder.Entity("eShop.PaymentProcessor.Domain.PaymentTransaction", b =>
                 {
                     b.Property<int>("Id")
@@ -59,6 +90,9 @@ namespace eShop.PaymentProcessor.Migrations
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("OutboxTransactionId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -92,6 +126,8 @@ namespace eShop.PaymentProcessor.Migrations
 
                     b.HasIndex("OrderId")
                         .IsUnique();
+
+                    b.HasIndex("OutboxTransactionId");
 
                     b.HasIndex("Status", "ResultEventPublished");
 

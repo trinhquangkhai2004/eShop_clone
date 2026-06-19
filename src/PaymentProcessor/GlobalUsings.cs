@@ -1,5 +1,7 @@
 ﻿global using eShop.EventBus.Abstractions;
 global using eShop.EventBus.Events;
+global using eShop.IntegrationEventLogEF;
+global using eShop.IntegrationEventLogEF.Services;
 global using eShop.PaymentProcessor;
 global using eShop.PaymentProcessor.Chaos;
 global using eShop.PaymentProcessor.IntegrationEvents.EventHandling;

@@ -14,6 +14,7 @@ public class PaymentTransaction
     public string? FailureReason { get; private set; }
     public int ReconciliationAttempts { get; private set; }
     public DateTime? LastReconciledAt { get; private set; }
+    public Guid? OutboxTransactionId { get; private set; }
     public bool ResultEventPublished { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
@@ -106,6 +107,11 @@ public class PaymentTransaction
     {
         ResultEventPublished = true;
         Touch();
+    }
+
+    public void MarkOutboxTransaction(Guid transactionId)
+    {
+        OutboxTransactionId = transactionId;
     }
 
     public void MarkReconciled()
